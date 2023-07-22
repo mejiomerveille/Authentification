@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'account',
+    'social_google',
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -52,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -71,6 +74,15 @@ CACHES = {
 }
 
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'votre_email@gmail.com'
+EMAIL_HOST_PASSWORD = 'votre_mot_de_passe'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'votre_email@gmail.com'
+
+
 ROOT_URLCONF = 'BackendIntimia.urls'
 
 TEMPLATES = [
@@ -84,6 +96,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
             ],
         },
     },
@@ -98,9 +111,9 @@ WSGI_APPLICATION = 'BackendIntimia.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'root',
-        'USER':'root',
-        'PASSWORD': 'root',
+        'NAME': 'test',
+        'USER':'test',
+        'PASSWORD': 'test',
         'HOST':'localhost',
         'PORT':5432
     }
@@ -154,3 +167,16 @@ AUTH_USER_MODEL = 'account.User'
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+# social app custum settings
+
+AUTHENTIFICATION_BAKENDS = [
+    'social_core.backends.google.GoogleOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_URL = 'logout'
+LOGOUT_REDIRECT_URL = 'login'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY ='##################################'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '##################################'

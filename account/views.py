@@ -1,6 +1,7 @@
 # from .models import OTP
 # from django.contrib.auth import get_user_model
 # from django.contrib.auth.forms import UserCreationForm
+import smtplib
 from django.core.cache import cache
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -17,14 +18,17 @@ cache.set('my_key', 'my_value' ,timeout= None)
 my_value = cache.get('my_key')
 
 
+
 # Create your views here.
 class RegisterView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        server = smtplib.SMTP_SSL('smtp.gmail.com',465)
+        server.login("")
         return Response(serializer.data)
-
+    
 @api_view(['POST'])
 def send_otp(request):
         data = request.data
@@ -40,36 +44,24 @@ def send_otp(request):
                 'status' :400,
                 'message' : 'key password is required'
             })
-        
+        otp = send_otp_to_phone(data.get('phone_number'))
+        if otp is None:
+            return Response({
+                'status':500,
+                'message': 'OTP fail to generate'
+            })
         user = User.objects.create(
             phone_number = data.get('phone_number'),
-            otp = send_otp_to_phone(data.get('phone_number'))
+            otp = otp,
+            is_active =False
         )
-        user.set_password = data.get('set_password')
+        user.set_password(data.get('password'))
         user.save()
-
         return Response ({
                 'status' :200,
-                'message' : 'otp sent'
+                'message' : 'otp sent',
+                'otp': otp
             })
-
-
-# User = get_user_model()
-
-# def register(request):
-#     if request.method == 'POST':
-#         form = UserCreationForm(request.POST)
-#         if form.is_valid():
-#             user = form.save()
-#             otp = OTP.generate_otp(user=user)
-#             # Envoyer le code par SMS, email, etc. à l'utilisateur
-#             # Enregistrer le code OTP dans la base de données pour pouvoir le vérifier plus tard
-#             otp.save()
-#             # Renvoyer une réponse à l'utilisateur
-#             return render(request, 'registration/register_done.html', {'new_user': user})
-#     else:
-#         form = UserCreationForm()
-#     return render(request, 'registration/register.html', {'form': form})
 
 
 
@@ -77,25 +69,21 @@ def send_otp(request):
 def verify_otp(request):
         data = request.data
 
-        if data.get('phone_number') is None :
-            return Response ({
-                'status' :400,
-                'message' : 'key phone_number is required'
-            })
-        
         if data.get('otp') is None:
             return Response ({
                 'status' :400,
                 'message' : 'key otp is required'
+                
             })
         
         try:
-            user_obj = User.objects.get(phone_number = data.get('phone_number'))
+            user_obj = User.objects.get(otp = data.get('otp'))
+            user_obj.is_active=True
 
         except Exception as e:
             return Response ({
                     'status' :400,
-                    'message' : 'invalid phone'
+                    'message' : 'invalid otp'
                 })
         
         if user_obj.otp == data.get('otp'):
@@ -109,8 +97,7 @@ def verify_otp(request):
         return Response ({
                     'status' :400,
                     'message' : 'invalid otp'
-                })        
-
+                })     
 
 class LoginView(APIView):
     def post(self, request):
